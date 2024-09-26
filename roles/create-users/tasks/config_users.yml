@@ -1,0 +1,72 @@
+---
+- name: set a hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+      
+- name: get list of all users
+  ansible.builtin.command: getent passwd
+  register: passwd_output
+
+- name: get list of home directories
+  ansible.builtin.find:
+    paths: /home
+    file_type: directory
+    recurse: no
+  register: home_dirs
+
+- name: append root's home directory
+  ansible.builtin.set_fact:
+    home_dirs: "{{ home_dirs.files | map(attribute='path') | list + ['/root'] }}"
+
+- name: extract user information
+  ansible.builtin.set_fact:
+    user_data: "{{ passwd_output.stdout_lines | map('split', ':') | selectattr('5', 'search', '^/home|^/root') | selectattr('5', 'in', home_dirs) | list }}"
+
+- name: extract usernames and home directories
+  ansible.builtin.set_fact:
+    users: "{{ user_data | map(attribute=0) | list }}"
+    user_home_dirs: "{{ user_data | map(attribute=5) | list }}"
+
+- name: ensure .bashrc exists and add PS1 configuration for all users except root
+  block:
+    - name: ensure .bashrc exists for user
+      ansible.builtin.file:
+        path: "{{ item.1 }}/.bashrc"
+        state: touch
+        owner: "{{ item.0 }}"
+        group: "{{ item.0 }}"
+        mode: '0644'
+      when: item.0 != 'root'
+      loop: "{{ users | zip(user_home_dirs) | list }}"
+      loop_control:
+        loop_var: item
+
+    - name: add PS1 configuration to .bashrc for user
+      ansible.builtin.lineinfile:
+        path: "{{ item.1 }}/.bashrc"
+        regexp: '^PS1='
+        line: |
+          PS1="\[\033[0m\][\[\033[0;33m\]\u\[\033[0m\]@\H:\[\033[36m\][\w]\[\033[0m\]]\$ "
+        create: yes
+      when: item.0 != 'root'
+      loop: "{{ users | zip(user_home_dirs) | list }}"
+      loop_control:
+        loop_var: item
+
+- name: ensure .bashrc exists and add PS1 configuration for root
+  block:
+    - name: ensure .bashrc exists for root
+      ansible.builtin.file:
+        path: /root/.bashrc
+        state: touch
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: add PS1 configuration to .bashrc for root
+      ansible.builtin.lineinfile:
+        path: /root/.bashrc
+        regexp: '^PS1='
+        line: |
+          PS1="\[\033[0m\][\[\033[1;31m\]\u\[\033[0m\]@\H:\[\033[36m\][\w]\[\033[0m\]]\$ "
+        create: yes

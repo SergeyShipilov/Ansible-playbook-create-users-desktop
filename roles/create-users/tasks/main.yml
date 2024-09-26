@@ -1,0 +1,6 @@
+---
+- name: register pass
+  include_tasks: "register-pass-{{ ansible_system }}.yml"
+
+- name: create users
+  include_tasks: "install-{{ ansible_system }}.yml"

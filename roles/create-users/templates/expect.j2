@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+spawn /tmp/encrypting.sh
+send -- "{{password_username}}\r"
+expect eof

@@ -1,0 +1,25 @@
+---
+- name: FATAL - This system is family is {{ ansible_facts['os_family'] }}
+  fail:
+    msg: "This role is only compatible with macOS"
+  when: ansible_facts['os_family'] != 'Darwin'
+
+- name: initiate user creating (if a username has been specified)
+  block:
+  - include_tasks: check-for-exisiting-user.yml
+
+  - debug:
+      msg: "Will Skip the creation and configuration of the account for '{{ new_user_username }}' "
+    when: new_user_username_already_in_use|bool
+
+  - name: create new user (if not already exisiting)
+    block:
+    - include_tasks: create-user.yml
+
+    - name: Configure new account (if created successfully)
+      block:
+      - include_tasks: profile-config.yml
+
+- debug:
+    msg: "No 'new_user_username' was defined"
+  when: new_user_username is not defined or new_user_username | length == 0
