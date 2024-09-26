@@ -218,19 +218,26 @@ fancy_echo "Done."
 
 ```
 
-# create user
+# Run the Playbook create user
+Run the playbook by specifying your inventory file and variable file:
 
 create user linux
 ```
 ansible-playbook --user root --extra-vars "host=host_name username=user_name password_username=password_user comment='User User'" playbooks/create-users.yml
 ```
-create user macos
 
+create user macos
 ```
 ansible-playbook --user root --extra-vars "host=host_name new_user_username=username new_user_fullname='User User' new_user_password_cleartext='1111'" playbooks/create-users.yml
 ```
-create user macos tempadmin
 
+create user macos tempadmin
 ```
 ansible-playbook --user root --extra-vars "host=host_name new_user_username=tempadmin new_user_fullname='temp admin' new_user_password_cleartext='password' new_user_is_admin=yes" playbooks/create-users.yml
 ```
+
+Roles
+To use this playbook, you need to create a role called create-users. This role should include the tasks to create users based on the provided variables.
+
+License
+This project is licensed under the MIT License.
