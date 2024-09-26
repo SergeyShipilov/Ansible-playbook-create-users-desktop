@@ -9,7 +9,6 @@
 # Ansible Vault Password file
 .vault_pass
 .idea
-ansible.cfg
 
 .vault
 .pass
